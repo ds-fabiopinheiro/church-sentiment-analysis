@@ -1,0 +1,15 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv venv && uv pip install -e ".[dev]" && uv pip install opencv-python-headless numpy
+      - run: uv run ruff check .
+      - run: uv run pytest -q
+      - name: guarda de não-persistência (pipeline com motor mock)
+        run: uv run python processar_culto.py --video tests/fixtures/curto.mp4 --culto ci --provider mock --no-transcribe --out out/ || true
+      - name: nenhum modelo de reconhecimento no código
+        run: "! grep -rn --include=*.py -E \"recognition|embedding|arcface|w600k\" reacao/ | grep -v allowed_modules | grep -v 'assert \"recognition\"'"
