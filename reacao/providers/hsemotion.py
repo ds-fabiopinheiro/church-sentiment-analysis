@@ -1,8 +1,6 @@
 """HSEmotion (ONNX): 8 expressões por recorte. Leve, roda em lote na T4. Pose via 6DRepNet (reacao.pose)."""
 from __future__ import annotations
-import numpy as np
 from .base import Provider
-from ..types import FaceObservation
 from ..detect import crop
 
 

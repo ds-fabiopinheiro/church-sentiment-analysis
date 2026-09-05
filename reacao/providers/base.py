@@ -12,7 +12,7 @@ class Provider(ABC):
     @abstractmethod
     def analyze(self, frame_bgr: np.ndarray, faces: list[FaceObservation]) -> list[FaceObservation]:
         """Preenche p_smile, expressiveness, (yaw, pitch, eyes_closed quando o motor der) nos rostos mensuráveis.
-        Nunca retorna embedding, id ou recorte. Rostos com h < 64 px voltam sem medição."""
+        Nunca retorna vetor de identidade facial, id ou recorte. Rostos com h < 64 px voltam sem medição."""
 
 
 def get_provider(name: str) -> Provider:

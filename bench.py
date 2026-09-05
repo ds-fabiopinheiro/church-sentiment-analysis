@@ -44,13 +44,17 @@ def main():
             eventos = pd.read_csv(ev_csv) if os.path.exists(ev_csv) else pd.DataFrame(columns=["t_ini_s", "t_fim_s", "tipo"])
             sampled_t = sorted(set(manual.t_s.round().astype(int)))
             # recall nos quadros rotulados
-            t0 = time.time(); det_meas = 0; n_frames = 0
+            t0 = time.time()
+            det_meas = 0
+            n_frames = 0
             obs_all, ftimes = [], []
             for t, frame in ingest.frames(video, 1.0):
                 if int(round(t)) in sampled_t or not eventos.empty and ((eventos.t_ini_s <= t) & (eventos.t_fim_s >= t)).any():
                     faces = detect.detect(frame, t)
                     obs = prov.analyze(frame, faces)
-                    obs_all.extend(obs); ftimes.append(t); n_frames += 1
+                    obs_all.extend(obs)
+                    ftimes.append(t)
+                    n_frames += 1
                     if int(round(t)) in sampled_t:
                         det_meas += sum(1 for o in obs if o.measurable)
             elapsed = max(1e-6, time.time() - t0)

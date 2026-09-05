@@ -10,7 +10,7 @@ WINDOW_S = 30
 
 @dataclass
 class FaceObservation:
-    """Uma observação de rosto em um quadro. Nunca contém embedding, id persistente ou recorte."""
+    """Uma observação de rosto em um quadro. Nunca contém vetor de identidade facial, id persistente ou recorte."""
     t: float
     x: int
     y: int
