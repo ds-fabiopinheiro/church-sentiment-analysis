@@ -27,7 +27,7 @@ The same Docker image runs everywhere:
 
 Quick start (local, mock engine, no GPU):
 ```
-uv run processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
+uv run python processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
 ```
 
 ## Status and roadmap

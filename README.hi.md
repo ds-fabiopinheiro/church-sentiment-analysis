@@ -27,7 +27,7 @@ Pew Research के 2016 के सर्वेक्षण में, नई �
 
 त्वरित शुरुआत (स्थानीय, नकली इंजन, बिना GPU):
 ```
-uv run processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
+uv run python processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
 ```
 
 ## स्थिति और रोडमैप

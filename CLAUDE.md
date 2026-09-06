@@ -21,7 +21,7 @@ com o mesmo script e a mesma imagem Docker.
 6. **Schema sem pessoa.** Tabelas do Supabase não têm campo por pessoa; `tests/test_schema.py` verifica.
 
 ## Como rodar
-- Local (CPU, para testes): `uv run processar_culto.py --video samples/x.mp4 --culto teste --provider hsemotion --out out/`
+- Local (CPU, para testes): `uv run python processar_culto.py --video samples/x.mp4 --culto teste --provider hsemotion --out out/`
 - Hugging Face Jobs (GPU T4, US$ 0,40/h): ver `docs/hf-jobs.md`.
 - Testes: `uv run pytest -q`.
 

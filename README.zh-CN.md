@@ -27,7 +27,7 @@
 
 快速开始（本地、模拟引擎、无需 GPU）：
 ```
-uv run processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
+uv run python processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
 ```
 
 ## 状态与路线图

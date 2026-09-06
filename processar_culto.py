@@ -8,7 +8,7 @@
 """Processa UM culto: vídeo → rostos (só detecção) → expressão/pose em rostos ≥ 64 px → agregados por 30 s (k ≥ 10)
 → transcrição do púlpito → momentos → eventos → insights (lint) → Supabase ou JSON local. Nenhum quadro em disco.
 
-Local:   uv run processar_culto.py --video x.mp4 --culto teste --provider mock --out out/
+Local:   uv run python processar_culto.py --video x.mp4 --culto teste --provider mock --out out/
 HF Jobs: hf jobs uv run --flavor t4-small --timeout 3h --secret SUPABASE_URL=... --secret SUPABASE_SERVICE_KEY=... \
          --secret ANTHROPIC_API_KEY=... --secret HF_TOKEN=... processar_culto.py --video hf://datasets/u/corpus/c1.mp4 --culto poc-01
 """

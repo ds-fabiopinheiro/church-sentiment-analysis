@@ -27,7 +27,7 @@ Pew Research-এর ২০১৬ সালের জরিপে, নতুন �
 
 দ্রুত শুরু (স্থানীয়, নকল ইঞ্জিন, GPU ছাড়া):
 ```
-uv run processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
+uv run python processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
 ```
 
 ## অবস্থা ও রোডম্যাপ

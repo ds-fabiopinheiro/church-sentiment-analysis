@@ -47,8 +47,10 @@ docker run --rm --gpus all \
   ghcr.io/ds-fabiopinheiro/church-sentiment-analysis:latest --video /videos/2026-09-06-19h.mp4 --culto 2026-09-06-19h --provider hsemotion
 ```
 `--shm-size` importa: recortes temporários vivem em `/dev/shm` (regra 1 do CLAUDE.md), nunca em disco.
-Se a igreja preferir não usar API de linguagem em nuvem, `--llm ollama` aponta para um modelo local
-(qwen/llama) no mesmo servidor; a qualidade dos insights deve ser reavaliada com o pregador.
+Se a igreja preferir não usar API de linguagem em nuvem, basta não passar `-e ANTHROPIC_API_KEY`: sem a chave,
+os momentos são segmentados por heurística de palavras-chave (`reacao/moments.py`) e os insights usam o modelo
+de frase fixo (`reacao/insights.py`), ambos locais e sujeitos ao lint. Suporte a um modelo de linguagem local
+(Ollama com qwen/llama) ainda não existe; se for implementado, a qualidade dos insights deve ser reavaliada com o pregador.
 
 ## 4. Teste de paridade (critério de aceite de PBI-103 e PBI-106)
 1. Processar o mesmo vídeo público do corpus na HF (`t4-small`) e no servidor local.

@@ -27,7 +27,7 @@ A mesma imagem Docker roda em qualquer lugar:
 
 Início rápido (local, motor simulado, sem GPU):
 ```
-uv run processar_culto.py --video culto.mp4 --culto 2026-09-06-19h --provider mock --out out/
+uv run python processar_culto.py --video culto.mp4 --culto 2026-09-06-19h --provider mock --out out/
 ```
 
 ## Situação e roteiro

@@ -27,7 +27,7 @@ Pew Research の 2016 年の調査では、新しい教会を探した人の 83%
 
 クイックスタート（ローカル、モックエンジン、GPU 不要）：
 ```
-uv run processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
+uv run python processar_culto.py --video service.mp4 --culto 2026-09-06-19h --provider mock --out out/
 ```
 
 ## 状況とロードマップ
