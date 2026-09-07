@@ -19,12 +19,13 @@ class HSEmotionProvider(Provider):
         idx = [i for i, f in enumerate(faces) if f.measurable]
         if not idx:
             return faces
-        crops = [crop(frame_bgr, faces[i])[:, :, ::-1] for i in idx]      # BGR -> RGB
+        crops_bgr = [crop(frame_bgr, faces[i]) for i in idx]
+        crops = [c[:, :, ::-1] for c in crops_bgr]                          # BGR -> RGB (HSEmotion espera RGB)
         _, scores = self.rec.predict_multi_emotions(crops, logits=False)   # scores: (n, 8)
         labels = list(self.rec.idx_to_class.values()) if hasattr(self.rec, "idx_to_class") else \
             ["Anger", "Contempt", "Disgust", "Fear", "Happiness", "Neutral", "Sadness", "Surprise"]
         i_happy, i_neutral = labels.index("Happiness"), labels.index("Neutral")
-        poses = self.pose.predict_batch(crops) if self.pose else [(None, None)] * len(crops)
+        poses = self.pose.predict_batch(crops_bgr) if self.pose else [(None, None)] * len(crops)   # 6DRepNet espera BGR
         for k, i in enumerate(idx):
             f = faces[i]
             f.p_smile = float(scores[k][i_happy])
