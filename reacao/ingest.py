@@ -31,6 +31,17 @@ def duration_s(path: str) -> float:
     return float(n / f) if f else 0.0
 
 
+def ultimo_tempo_amostrado(path: str, fps: float = 1.0) -> float | None:
+    """Último `t` que `frames()` produz. Rótulo marcado depois disso não casa com quadro nenhum."""
+    cap = cv2.VideoCapture(path)
+    n, src_fps = cap.get(cv2.CAP_PROP_FRAME_COUNT), cap.get(cv2.CAP_PROP_FPS) or 25.0
+    cap.release()
+    if n < 1 or src_fps <= 0:
+        return None
+    step = max(1, int(round(src_fps / fps)))
+    return (((int(n) - 1) // step) * step) / src_fps
+
+
 def downscale(frame: np.ndarray, width: int = 640) -> np.ndarray:
     h, w = frame.shape[:2]
     if w <= width:

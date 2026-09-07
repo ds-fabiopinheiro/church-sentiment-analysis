@@ -9,7 +9,9 @@ validar_labels = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(validar_labels)
 
 FACES_OK = "t_s,altura_px\n" + "".join(f"{t},{80 + t}\n" for t in range(12))
-EVENTOS_OK = "t_ini_s,t_fim_s,tipo\n10,14,riso\n30,40,neutro\n50,60,neutro\n"
+# o critério 2 é medido sobre o corpus: pelo menos um riso e quatro trechos neutros no total
+EVENTOS_OK = ("t_ini_s,t_fim_s,tipo\n10,14,riso\n20,24,neutro\n30,34,neutro\n"
+              "40,44,neutro\n50,54,neutro\n")
 
 
 def _escrever(pasta, base="clipe01", faces=FACES_OK, eventos=EVENTOS_OK):
@@ -56,12 +58,28 @@ def test_tipo_de_evento_desconhecido_e_intervalo_invertido(tmp_path, capsys):
     assert codigo == 1 and "fora de" in saida and "deve ser maior que" in saida
 
 
-def test_faces_ausente_e_erro_e_falta_de_riso_e_aviso(tmp_path, capsys):
+def test_faces_ausente_e_erro(tmp_path, capsys):
     codigo, saida = _rodar(_escrever(tmp_path / "labels", faces=None), capsys)
     assert codigo == 1 and "sem ele o bench ignora este vídeo" in saida
-    eventos = "t_ini_s,t_fim_s,tipo\n30,40,neutro\n50,60,neutro\n"
-    codigo, saida = _rodar(_escrever(tmp_path / "l2", eventos=eventos), capsys)
-    assert codigo == 0 and "critério 2 do gate não pode ser calculado" in saida
+
+
+def test_corpus_sem_riso_ou_com_poucos_neutros_e_erro(tmp_path, capsys):
+    """Os mínimos do critério 2 valem sobre o corpus inteiro, não por vídeo: com clipes de 8 a 23 s
+    nenhum vídeo sozinho comporta quatro trechos neutros."""
+    so_neutros = "t_ini_s,t_fim_s,tipo\n20,24,neutro\n30,34,neutro\n40,44,neutro\n50,54,neutro\n"
+    codigo, saida = _rodar(_escrever(tmp_path / "labels", eventos=so_neutros), capsys)
+    assert codigo == 1 and "nenhum evento de riso em todo o corpus" in saida
+    poucos = "t_ini_s,t_fim_s,tipo\n10,14,riso\n20,24,neutro\n30,34,neutro\n"
+    codigo, saida = _rodar(_escrever(tmp_path / "l2", eventos=poucos), capsys)
+    assert codigo == 1 and "o jitter precisa de pelo menos 4" in saida
+
+
+def test_video_sem_trecho_neutro_usa_a_base_do_corpus(tmp_path, capsys):
+    labels = tmp_path / "labels"
+    _escrever(labels, base="clipe01", eventos="t_ini_s,t_fim_s,tipo\n2,6,riso\n")
+    _escrever(labels, base="clipe02", eventos="t_ini_s,t_fim_s,tipo\n1,3,neutro\n4,6,neutro\n7,9,neutro\n10,12,neutro\n")
+    codigo, saida = _rodar(labels, capsys)
+    assert codigo == 0 and "vai usar a base neutra do corpus" in saida
 
 
 def test_nome_de_arquivo_sem_video_correspondente(tmp_path, capsys):

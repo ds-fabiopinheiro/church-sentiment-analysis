@@ -25,7 +25,8 @@ def _template(ev: Event, trecho: str) -> Insight:
     return Insight(minuto=_mmss(ev.t_ini), momento=ev.momento, trecho=trecho[:200], texto=texto, sinais=[ev.sinal], evento=ev.tipo)
 
 
-def write(events: list[Event], segments: list[Segment], max_insights: int = 8) -> list[Insight]:
+def write(events: list[Event], segments: list[Segment], max_insights: int = 8,
+          rejeitados: list[str] | None = None) -> list[Insight]:
     events = sorted(events, key=lambda e: -abs(e.magnitude_pp))[:max_insights]
     out: list[Insight] = []
     key = os.environ.get("ANTHROPIC_API_KEY")
@@ -53,6 +54,8 @@ def write(events: list[Event], segments: list[Segment], max_insights: int = 8) -
         erros = check(ins)
         if erros:
             print(f"[lint] insight rejeitado {ins.minuto}: {erros}")
+            if rejeitados is not None:
+                rejeitados.append(f"{ins.minuto}: {'; '.join(erros)}")
             continue
         out.append(ins)
     return out

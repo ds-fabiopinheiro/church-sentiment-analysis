@@ -17,6 +17,10 @@ def load(det_size=(1280, 1280)):
         loaded = set(app.models.keys())
         assert "recognition" not in loaded, f"módulo de reconhecimento carregado: {loaded}"
         _APP = app
+    elif tuple(_APP.det_size) != tuple(det_size):
+        # sem isto o det_size da PRIMEIRA chamada valia para sempre: o pré-filtro em 640 fixava o detector
+        # e a passada em resolução plena rodava em 640. Re-preparar custa ~0,03 ms.
+        _APP.prepare(ctx_id=0, det_size=det_size, det_thresh=0.5)
     return _APP
 
 

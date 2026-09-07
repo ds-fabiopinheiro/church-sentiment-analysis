@@ -13,9 +13,16 @@ PROIBIDO = [r"\bsent(ir|iu|e|em|ia|iam|iram|indo)\b", r"\bsentir(am|a|em)\b", r"
 PROIBIDO_INDIVIDUAL = [r"\buma pessoa\b", r"\bo (homem|rapaz|senhor)\b", r"\ba (mulher|moça|senhora)\b", r"\bfileira\b", r"\bassento\b"]
 
 
+def _sem_citacao(ins: Insight) -> str:
+    """Tira do texto a citação literal do púlpito. O vocabulário proibido descreve a congregação, não a
+    pregação: um sermão diz "a alegria do Senhor" e "os cansados", e isso não é leitura de estado interno.
+    Aspas cujo conteúdo não vem do trecho continuam sendo lintadas, para o LLM não contrabandear texto."""
+    return re.sub(r'"([^"]*)"', lambda m: '"…"' if m.group(1) and m.group(1) in ins.trecho else m.group(0), ins.texto)
+
+
 def check(ins: Insight) -> list[str]:
     erros = []
-    txt = ins.texto.lower()
+    txt = _sem_citacao(ins).lower()
     for p in PROIBIDO:
         if re.search(p, txt):
             erros.append(f"verbo/termo de estado interno: /{p}/")

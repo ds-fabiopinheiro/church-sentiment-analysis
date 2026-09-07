@@ -18,6 +18,7 @@ TIPOS_EVENTO = {"riso", "aplauso", "pe", "cabeca_baixa", "neutro"}
 MOMENTOS = {"louvor", "oracao", "avisos", "palavra", "apelo", "ceia", "encerramento"}
 ALTURA_MENSURAVEL_PX = 64
 TOLERANCIA_GRADE_S = 0.05      # o pipeline amostra em segundos inteiros; t_s fora disso não casa com quadro nenhum
+MIN_TRECHOS_NEUTROS_CORPUS = 4   # abaixo disso o desvio-padrão do jitter não existe (bench.py MIN_TRECHOS_JITTER)
 
 
 class Relatorio:
@@ -54,7 +55,7 @@ def _numero(valor: str | None, arquivo: str, linha: int, coluna: str, rel: Relat
         return None
 
 
-def validar_faces(caminho: str, duracao_s: float | None, rel: Relatorio) -> None:
+def validar_faces(caminho: str, ultimo_t: float | None, rel: Relatorio) -> None:
     nome = os.path.basename(caminho)
     linhas = _ler(caminho, ["t_s", "altura_px"], rel)
     if linhas is None:
@@ -73,8 +74,9 @@ def validar_faces(caminho: str, duracao_s: float | None, rel: Relatorio) -> None
         if h <= 0:
             rel.erro(nome, f"linha {i}: altura_px deve ser positiva ({h})")
             continue
-        if duracao_s is not None and t > duracao_s + 1:
-            rel.erro(nome, f"linha {i}: t_s {t:.1f}s além da duração do vídeo ({duracao_s:.1f}s)")
+        if ultimo_t is not None and round(t) > round(ultimo_t):
+            rel.erro(nome, f"linha {i}: t_s {t:.1f}s depois do último quadro amostrado ({ultimo_t:.0f}s); "
+                           "esses rostos entram no denominador do recall e nunca podem ser detectados")
             continue
         tempos.add(t)
         if abs(t - round(t)) > TOLERANCIA_GRADE_S:
@@ -87,12 +89,14 @@ def validar_faces(caminho: str, duracao_s: float | None, rel: Relatorio) -> None
                        "o pipeline amostra 1 quadro por segundo e esses rostos não entram no recall")
     if mensuraveis == 0:
         rel.erro(nome, f"nenhum rosto com altura ≥ {ALTURA_MENSURAVEL_PX} px: o recall do critério 1 fica indefinido")
-    if len(tempos) < 5:
-        rel.aviso(nome, f"só {len(tempos)} quadro(s) distinto(s); o README pede cerca de 20")
+    disponiveis = int(ultimo_t) + 1 if ultimo_t is not None else None
+    if disponiveis and len(tempos) < disponiveis:
+        rel.aviso(nome, f"{len(tempos)} de {disponiveis} quadro(s) amostrados foram rotulados; "
+                        "o recall só é medido nos quadros que têm rótulo")
     print(f"  {nome}: {len(linhas)} rosto(s) em {len(tempos)} quadro(s), {mensuraveis} com altura ≥ {ALTURA_MENSURAVEL_PX} px")
 
 
-def validar_eventos(caminho: str, duracao_s: float | None, rel: Relatorio) -> None:
+def validar_eventos(caminho: str, ultimo_t: float | None, rel: Relatorio) -> dict[str, int]:
     nome = os.path.basename(caminho)
     linhas = _ler(caminho, ["t_ini_s", "t_fim_s", "tipo"], rel)
     if linhas is None:
@@ -113,8 +117,8 @@ def validar_eventos(caminho: str, duracao_s: float | None, rel: Relatorio) -> No
         if t0 < 0:
             rel.erro(nome, f"linha {i}: t_ini_s negativo ({t0})")
             continue
-        if duracao_s is not None and t0 > duracao_s + 1:
-            rel.erro(nome, f"linha {i}: intervalo começa em {t0:.1f}s, além da duração do vídeo ({duracao_s:.1f}s)")
+        if ultimo_t is not None and t0 > ultimo_t + 1:
+            rel.erro(nome, f"linha {i}: intervalo começa em {t0:.1f}s, depois do último quadro ({ultimo_t:.0f}s)")
             continue
         intervalos.append((t0, t1, tipo))
     for a in range(len(intervalos)):
@@ -123,16 +127,13 @@ def validar_eventos(caminho: str, duracao_s: float | None, rel: Relatorio) -> No
             if i1 > j0 and j1 > i0:
                 rel.aviso(nome, f"intervalos sobrepostos: {ta} [{i0:.0f}–{i1:.0f}] e {tb} [{j0:.0f}–{j1:.0f}]")
     contagem = {t: sum(1 for _, _, x in intervalos if x == t) for t in sorted(TIPOS_EVENTO)}
-    if not contagem["riso"]:
-        rel.aviso(nome, "nenhum evento de riso: o critério 2 do gate não pode ser calculado neste vídeo")
     if not contagem["neutro"]:
-        rel.aviso(nome, "nenhum trecho neutro: sem base de comparação, sensibilidade e jitter ficam indefinidos")
-    elif contagem["neutro"] < 2:
-        rel.aviso(nome, "só um trecho neutro; o jitter precisa de pelo menos dois")
+        rel.aviso(nome, "sem trecho neutro: este vídeo vai usar a base neutra do corpus, não a própria")
     print(f"  {nome}: {len(intervalos)} intervalo(s) " + ", ".join(f"{t}={n}" for t, n in contagem.items() if n))
+    return contagem
 
 
-def validar_momentos(caminho: str, duracao_s: float | None, rel: Relatorio) -> None:
+def validar_momentos(caminho: str, ultimo_t: float | None, rel: Relatorio) -> None:
     nome = os.path.basename(caminho)
     linhas = _ler(caminho, ["t_ini_s", "t_fim_s", "nome"], rel)
     if linhas is None:
@@ -154,18 +155,18 @@ def validar_momentos(caminho: str, duracao_s: float | None, rel: Relatorio) -> N
     print(f"  {nome}: {n} momento(s)")
 
 
-def duracao_do_video(corpus: str | None, base: str) -> float | None:
+def ultimo_quadro_amostrado(corpus: str | None, base: str) -> float | None:
+    """Último tempo que o pipeline realmente amostra. Sem o vídeo à mão, devolve None e as checagens de tempo saem."""
     if not corpus:
         return None
     caminho = os.path.join(corpus, f"{base}.mp4")
     if not os.path.exists(caminho):
         return None
     try:
-        from reacao.ingest import duration_s
+        from reacao.ingest import ultimo_tempo_amostrado
     except ImportError:
         return None
-    d = duration_s(caminho)
-    return d if d > 0 else None
+    return ultimo_tempo_amostrado(caminho)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -186,9 +187,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     videos = {os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(args.corpus, "*.mp4"))} if args.corpus else set()
+    total_eventos: dict[str, int] = {t: 0 for t in TIPOS_EVENTO}
     for base in bases:
         print(f"{base}:")
-        duracao = duracao_do_video(args.corpus, base)
+        duracao = ultimo_quadro_amostrado(args.corpus, base)
         if videos and base not in videos:
             rel.erro(f"{base}_*.csv", "não há vídeo com esse nome no corpus; confira o nome do arquivo, "
                                       "porque o bench casa rótulo e vídeo pelo nome")
@@ -197,15 +199,26 @@ def main(argv: list[str] | None = None) -> int:
             validar_faces(faces, duracao, rel)
         else:
             rel.erro(f"{base}_faces.csv", "ausente: sem ele o bench ignora este vídeo por completo")
-        for sufixo, funcao in (("eventos", validar_eventos), ("momentos", validar_momentos)):
-            caminho = os.path.join(args.labels, f"{base}_{sufixo}.csv")
-            if os.path.exists(caminho):
-                funcao(caminho, duracao, rel)
-            elif sufixo == "eventos":
-                rel.aviso(f"{base}_eventos.csv", "ausente: critérios 2 (sensibilidade) e jitter ficam sem medida")
+        ev = os.path.join(args.labels, f"{base}_eventos.csv")
+        if os.path.exists(ev):
+            for tipo, n in (validar_eventos(ev, duracao, rel) or {}).items():
+                total_eventos[tipo] = total_eventos.get(tipo, 0) + n
+        else:
+            rel.aviso(f"{base}_eventos.csv", "ausente: critério 2 (sensibilidade) e jitter ficam sem medida neste vídeo")
+        mom = os.path.join(args.labels, f"{base}_momentos.csv")
+        if os.path.exists(mom):
+            validar_momentos(mom, duracao, rel)
 
     for video in sorted(videos - set(bases)):
         rel.aviso(f"{video}.mp4", "sem nenhum rótulo; o bench vai pular este vídeo")
+
+    # o critério 2 é medido sobre o corpus inteiro, então os mínimos valem no total, não por vídeo
+    if not total_eventos.get("riso"):
+        rel.erro("corpus", "nenhum evento de riso em todo o corpus: o critério 2 do gate fica sem medida")
+    if total_eventos.get("neutro", 0) < MIN_TRECHOS_NEUTROS_CORPUS:
+        rel.erro("corpus", f"{total_eventos.get('neutro', 0)} trecho(s) neutro(s) no corpus; "
+                           f"o jitter precisa de pelo menos {MIN_TRECHOS_NEUTROS_CORPUS} e a base neutra sai fraca")
+    print("\ncorpus: " + ", ".join(f"{t}={n}" for t, n in sorted(total_eventos.items()) if n))
 
     print()
     for msg in rel.avisos:

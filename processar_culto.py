@@ -95,13 +95,15 @@ def main(argv=None):
         for e in events:
             e.momento = moment_at(moments, e.t_ini)
         store.save_events(args.culto, events)
-        insights = write(events, segments)
+        rejeitados: list[str] = []
+        insights = write(events, segments, rejeitados=rejeitados)
         store.save_insights(args.culto, insights)
         timer.mark("analise")
 
         cobertura = round(100 * sum(1 for a in aggs if not a.insuficiente) / max(1, len(aggs)), 1)
         run = {"culto": args.culto, "provider": args.provider, "duracao_video_s": round(dur), "janelas": len(aggs),
-               "cobertura_pct": cobertura, "eventos": len(events), "insights": len(insights), **timer.summary(dur)}
+               "cobertura_pct": cobertura, "eventos": len(events), "insights": len(insights),
+               "insights_rejeitados_pelo_lint": len(rejeitados), **timer.summary(dur)}
         store.save_run(run)
         print(run)
         if args.stdout:
