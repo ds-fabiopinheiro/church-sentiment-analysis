@@ -9,7 +9,9 @@ jobs:
       - run: uv venv && uv pip install -e ".[dev]" && uv pip install opencv-python-headless numpy
       - run: uv run ruff check .
       - run: uv run pytest -q
+      - name: fixture sintética (mp4 curto, sem rosto; *.mp4 não é versionado)
+        run: uv run python tests/fixtures/gerar_curto.py tests/fixtures/curto.mp4
       - name: guarda de não-persistência (pipeline com motor mock)
-        run: uv run python processar_culto.py --video tests/fixtures/curto.mp4 --culto ci --provider mock --no-transcribe --out out/ || true
+        run: uv run python processar_culto.py --video tests/fixtures/curto.mp4 --culto ci --provider mock --no-transcribe --out out/
       - name: nenhum modelo de reconhecimento no código
         run: "! grep -rn --include=*.py -E \"recognition|embedding|arcface|w600k\" reacao/ | grep -v allowed_modules | grep -v 'assert \"recognition\"'"
