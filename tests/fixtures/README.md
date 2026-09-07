@@ -1,7 +1,8 @@
 # Fixtures de teste
 
-`curto.mp4` não é versionado (`*.mp4` está no `.gitignore`). O CI e o teste `tests/test_pipeline_mock.py`
-geram o arquivo na hora:
+`curto.mp4` não é versionado (`*.mp4` está no `.gitignore`). O CI o gera nesse caminho, com o comando abaixo,
+antes de rodar o pipeline; o teste `tests/test_pipeline_mock.py` gera uma cópia própria no diretório temporário
+do pytest (`tmp_path`). Para gerar à mão:
 
 ```
 uv run python tests/fixtures/gerar_curto.py tests/fixtures/curto.mp4
