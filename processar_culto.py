@@ -14,8 +14,10 @@ HF Jobs: hf jobs uv run --flavor t4-small --timeout 3h --secret SUPABASE_URL=...
 """
 from __future__ import annotations
 import argparse
+import json
 import os
 import sys
+from dataclasses import asdict
 
 
 def resolve_video(path: str) -> str:
@@ -40,6 +42,7 @@ def main(argv=None):
     ap.add_argument("--flavor", default=os.environ.get("HF_JOB_FLAVOR", "t4-small"))
     ap.add_argument("--no-transcribe", action="store_true")
     ap.add_argument("--out", default="out")
+    ap.add_argument("--stdout", action="store_true", help="imprime janelas, eventos e insights em JSON no stdout (logs do HF Jobs sem Supabase)")
     args = ap.parse_args(argv)
 
     from reacao.guard import no_persistence
@@ -101,6 +104,13 @@ def main(argv=None):
                "cobertura_pct": cobertura, "eventos": len(events), "insights": len(insights), **timer.summary(dur)}
         store.save_run(run)
         print(run)
+        if args.stdout:
+            for a in aggs:
+                print("[janela] " + json.dumps(a.to_row(), ensure_ascii=False))
+            for e in events:
+                print("[evento] " + json.dumps({"culto": args.culto, **asdict(e)}, ensure_ascii=False))
+            for i in insights:
+                print("[insight] " + json.dumps({"culto": args.culto, **asdict(i)}, ensure_ascii=False))
         if os.path.exists("/dev/shm/reacao-in"):
             import shutil
             shutil.rmtree("/dev/shm/reacao-in", ignore_errors=True)
