@@ -26,3 +26,25 @@ def test_no_per_person_fields_in_row():
     row = aggs[0].to_row()
     for banned in ("embedding", "track_id", "assento", "pessoa", "x", "y"):
         assert banned not in row
+
+
+def test_media_de_95_rostos_e_insuficiente():
+    """round(9.5) é 10 no Python; a regra 3 exige 10 rostos mensuráveis, não 9,5."""
+    obs = _obs(0.0, 70, 9) + _obs(1.0, 70, 10)
+    aggs = aggregate("c", "f", obs, [0.0, 1.0], {0.0, 1.0})
+    assert aggs[0].insuficiente is True
+    assert aggs[0].pct_sorrindo is None and aggs[0].pct_voltados is None
+
+
+def test_quadros_sem_plateia_nao_diluem_a_media():
+    """frame_times traz também os quadros de púlpito; só os de plateia entram no denominador."""
+    obs = _obs(0.0, 80, 20) + _obs(1.0, 80, 20)
+    frame_times = [float(t) for t in range(10)]      # 10 quadros na janela, 2 deles com plateia
+    aggs = aggregate("c", "f", obs, frame_times, {0.0, 1.0})
+    assert aggs[0].quadros == 10 and aggs[0].quadros_com_plateia == 2
+    assert aggs[0].n_mensuravel == 20 and aggs[0].insuficiente is False
+
+
+def test_janela_sem_quadro_de_plateia_e_insuficiente():
+    aggs = aggregate("c", "f", [], [0.0, 1.0], set())
+    assert aggs[0].insuficiente is True and aggs[0].n_mensuravel == 0

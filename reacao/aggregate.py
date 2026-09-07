@@ -20,13 +20,15 @@ def aggregate(culto: str, fonte: str, observations: list[FaceObservation], frame
     out = []
     for w in sorted(frames_by_win):
         obs = by_win.get(w, [])
-        nq = max(1, frames_by_win[w])
+        quadros_plateia = aud_by_win[w]
+        nq = max(1, quadros_plateia)   # média por quadro de plateia: quadro de púlpito não tem rosto e não dilui
         meas = [o for o in obs if o.measurable]
-        n_total = round(len(obs) / nq)
-        n_meas = round(len(meas) / nq)
+        media_mensuravel = len(meas) / nq
+        # k-mínimo sobre a média sem arredondar: round(9.5) daria 10 e a janela emitiria percentuais (regra 3)
         agg = WindowAggregate(culto=culto, fonte=fonte, t_ini=w * window_s, t_fim=(w + 1) * window_s,
-                              quadros=frames_by_win[w], quadros_com_plateia=aud_by_win[w],
-                              n_total=n_total, n_mensuravel=n_meas, insuficiente=n_meas < K_MIN)
+                              quadros=frames_by_win[w], quadros_com_plateia=quadros_plateia,
+                              n_total=round(len(obs) / nq), n_mensuravel=round(media_mensuravel),
+                              insuficiente=quadros_plateia == 0 or media_mensuravel < K_MIN)
         if obs:
             agg.altura_mediana_px = float(median(o.h for o in obs))
         if not agg.insuficiente:
