@@ -6,6 +6,7 @@ MIN_MEASURABLE_HEIGHT_PX = 64   # abaixo disso não medimos expressão
 DETECTION_FLOOR_PX = 24         # abaixo disso nenhum motor detecta com confiança
 K_MIN = 10                      # rostos mensuráveis por janela para emitir números
 WINDOW_S = 30
+TRECHO_AUSENTE = "(sem transcrição nesta janela)"   # marcador: não é trecho citado, o lint rejeita
 
 
 @dataclass
