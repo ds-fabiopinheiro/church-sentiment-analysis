@@ -21,7 +21,7 @@ gpu = [
 pyfeat = ["py-feat>=0.6.1"]
 libreface = ["libreface>=0.1"]
 llm = ["anthropic>=0.30"]
-dev = ["pytest>=8", "ruff>=0.4"]
+dev = ["pytest>=8", "ruff>=0.4", "pandas>=2.0"]   # pandas: bench.py e tests/test_bench_metricas.py
 
 [build-system]
 requires = ["setuptools>=68"]
