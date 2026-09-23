@@ -192,8 +192,11 @@ def main(argv=None) -> int:
     ap.add_argument("--fps-amostragem", type=float, default=1.0)
     ap.add_argument("--min-faces-plateia", type=int, default=5, help="igual ao padrão de processar_culto.py")
     ap.add_argument("--limiar-riso", type=float, default=15.0, help="subida mínima em p.p. para o evento contar (critério 2)")
+    ap.add_argument("--excluir", default="", help="nomes de vídeo a deixar de fora, separados por vírgula "
+                                                  "(ex.: os clipes usados no desenvolvimento)")
     ap.add_argument("--out", default="out/bench")
     args = ap.parse_args(argv)
+    excluidos = {n.strip() for n in args.excluir.split(",") if n.strip()}
     os.makedirs(args.out, exist_ok=True)
     brutos: list[dict] = []
     sem_rotulo: list[str] = []
@@ -204,10 +207,14 @@ def main(argv=None) -> int:
         if not videos:
             print(f"[bench] nenhum .mp4 em {corpus} — nada medido")
             return 1
+        if excluidos:
+            print(f"[bench] {len(excluidos)} vídeo(s) fora da medição por --excluir: {', '.join(sorted(excluidos))}")
         with no_persistence([os.getcwd(), "/tmp"]):
             prov = get_provider(args.provider)
             for video in videos:
                 nome = os.path.splitext(os.path.basename(video))[0]
+                if nome in excluidos:
+                    continue
                 faces_csv = os.path.join(labels, f"{nome}_faces.csv")
                 ev_csv = os.path.join(labels, f"{nome}_eventos.csv")
                 if not os.path.exists(faces_csv):

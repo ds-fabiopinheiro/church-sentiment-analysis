@@ -43,4 +43,8 @@ sem calibração registrada. `jitter_amplitude_pp` continua no CSV como diagnós
 corrigiu `reacao/detect.py`, a passada plena rodava em 640 por causa de um cache, então medições anteriores a esse
 commit subestimam tempo e custo.
 
+**Separação entre desenvolvimento e teste.** Os clipes 07 a 10 do corpus são byte a byte os mesmos usados para
+desenvolver e depurar o pipeline, então não valem como teste cego. O bench aceita `--excluir` para deixá-los fora da
+linha TOTAL; `tools/rodar_teste.sh` já o faz. Sobram 19 clipes nunca vistos, com 195 dos 248 quadros do corpus.
+
 Decisão: ( ) seguir para dados da PIB e RIPD  ( ) ajustar e repetir  ( ) parar. Data: ____ Assinam: Fabio Pinheiro, pastor Filipe.

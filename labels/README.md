@@ -22,6 +22,14 @@ ferramenta de clique.
 O nome do arquivo casa com o do vídeo: `igreja_simples_03.mp4` → `igreja_simples_03_faces.csv`. O bench ignora
 sem aviso o vídeo cujo `_faces.csv` não existir com o nome exato.
 
+## Preparar os arquivos
+
+```
+uv run python tools/preparar_rotulagem.py --corpus samples/corpus/pib --labels labels/
+```
+
+Cria os CSVs com o nome exato que o bench espera e lista, por clipe, os `t_s` que existem de verdade.
+
 ## Conferir antes de medir
 
 ```
