@@ -3,6 +3,11 @@ from __future__ import annotations
 import numpy as np
 
 
+def _escalar(v) -> float:
+    """float() em array de forma (1,) é erro no NumPy recente; .item() exige exatamente um elemento."""
+    return float(np.asarray(v).item())
+
+
 class HeadPose:
     def __init__(self):
         import torch
@@ -14,6 +19,6 @@ class HeadPose:
         """Recortes em BGR (como saem do OpenCV): SixDRepNet.predict converte para RGB internamente."""
         out = []
         for c in crops_bgr:
-            pitch, yaw, roll = self.model.predict(c)
-            out.append((float(pitch), float(yaw)))
+            pitch, yaw, _ = self.model.predict(c)   # arrays de forma (1,): lote de um recorte
+            out.append((_escalar(pitch), _escalar(yaw)))
         return out
